@@ -1,0 +1,34 @@
+    <div class="flex flex-col gap-5">
+      <.simple_form for={@form} phx-change="validate" phx-submit="save">
+        <.input field={@form[:name]} label="Username" />
+        <.input field={@form[:email]} label="Email"/>
+        <.input field={@form[:bio]} label="Bio" />
+
+        <:actions>
+          <.button>Save</.button>
+        </:actions>
+      </.simple_form>
+
+      <table class="border">
+        <tr>
+          <%= for col <- ["name", "email", "bio"] do %>
+            <th class={"border p-2 cursor-pointer hover:bg-gray-400 transition-all #{@sorted_by == col && "bg-blue-500"}"} phx-click={JS.push("order", value: %{by: col})}>
+              <%= col %>
+            </th>
+          <% end %>
+          <th></th>
+        </tr>
+        <tbody id="users">
+        <%= for user <- @users do %>
+          <tr id={"user_#{user.id}"}>
+            <td class="border p-2"><%= user.name %></td>
+            <td class="border p-2"><%= user.email %></td>
+            <td class="border p-2"><%= user.bio %></td>
+            <td class="border p-2">
+            <button phx-click="remove" value={user.id}>Remove</button>
+            </td>
+          </tr>
+        <% end %>
+        </tbody>
+      </table>
+    </div>
