@@ -11,14 +11,24 @@ defmodule LiveFormsWeb.UserList do
       User.changeset(%User{}, %{})
       |> to_form
 
-    {:ok, assign(socket, users: users, form: form, sorted_by: "name", sort_dir: :asc)}
+    {
+      :ok,
+      assign(
+        socket,
+        users: users,
+        form: form,
+        sorted_by: :name,
+        sort_dir: :asc,
+        search: %{} |> to_form
+      )
+    }
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     {:noreply, assign(socket, :form, user_params |> validate |> to_form)}
   end
 
-  def handle_event("remove", %{"value" => user_id}, socket) do
+  def handle_event("remove", %{"id" => user_id}, socket) do
     User
     |> Repo.get(user_id)
     |> Repo.delete()
@@ -29,12 +39,27 @@ defmodule LiveFormsWeb.UserList do
       |> Map.put(:action, :validate)
       |> to_form
 
+    socket = put_flash(socket, :info, "User removed successfully")
+
     {:noreply, assign(socket, users: Repo.all(User), form: form)}
   end
 
+  def handle_event("edit", %{"id" => user_id}, socket) do
+    user = Repo.get(User, user_id)
+
+    form =
+      user
+      |> User.changeset(%{})
+      |> Map.put(:action, :save)
+      |> to_form
+
+    {:noreply, assign(socket, form: form)}
+  end
+
   def handle_event("save", %{"user" => user_params}, socket) do
-    case %User{} |> User.changeset(user_params) |> Repo.insert() do
+    case %User{} |> User.changeset(user_params) |> Repo.insert do
       {:ok, _} ->
+        socket = put_flash(socket, :info, "User created successfully")
         {
           :noreply,
           assign(
@@ -50,10 +75,12 @@ defmodule LiveFormsWeb.UserList do
   end
 
   def handle_event("order", %{"by" => field}, socket) do
-    IO.inspect(socket.assigns.sort_dir)
+    IO.inspect(socket.assigns.sorted_by)
+
+    field_atom = field |> String.to_existing_atom()
 
     new_sort_dir =
-      if socket.assigns.sorted_by == field do
+      if socket.assigns.sorted_by == field_atom do
         flip_sorting(socket.assigns.sort_dir)
       else
         socket.assigns.sort_dir
@@ -61,7 +88,7 @@ defmodule LiveFormsWeb.UserList do
 
     users =
       from(u in User,
-        order_by: [{^new_sort_dir, ^String.to_existing_atom(field)}]
+        order_by: [{^new_sort_dir, ^field_atom}]
       )
 
     {
@@ -69,10 +96,23 @@ defmodule LiveFormsWeb.UserList do
       assign(
         socket,
         users: Repo.all(users),
-        sorted_by: field,
+        sorted_by: field_atom,
         sort_dir: new_sort_dir
       )
     }
+  end
+
+  def handle_event("search", %{"query" => query}, socket) do
+    users =
+      from(u in User,
+        where:
+          ilike(u.name, ^"%#{query}%") or
+            ilike(u.email, ^"%#{query}%") or
+            ilike(u.bio, ^"%#{query}%"),
+        order_by: [{^socket.assigns.sort_dir, ^socket.assigns.sorted_by}]
+      )
+
+    {:noreply, assign(socket, users: Repo.all(users))}
   end
 
   defp validate(params) do

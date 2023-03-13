@@ -16,7 +16,7 @@ defmodule LiveForms.User do
     user
     |> cast(attrs, [:name, :email, :bio])
     |> validate_required([:name, :email, :bio])
-    |> validate_format(:email, ~r/^\w+@\w+\.[a-z]{2,3}$/)
+    |> validate_format(:email, ~r/^[a-zA-Z.-_]+@\w+\.[a-z]{2,3}$/)
     |> validate_length(:bio, min: 5)
     |> unsafe_validate_unique(:email, Repo)
   end
