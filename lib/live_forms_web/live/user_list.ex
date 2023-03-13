@@ -7,9 +7,7 @@ defmodule LiveFormsWeb.UserList do
   def mount(_params, %{}, socket) do
     users = Repo.all(User)
 
-    form =
-      User.changeset(%User{}, %{})
-      |> to_form
+    form = to_form(User.changeset(%User{}, %{}))
 
     {
       :ok,
@@ -19,7 +17,7 @@ defmodule LiveFormsWeb.UserList do
         form: form,
         sorted_by: :name,
         sort_dir: :asc,
-        search: %{} |> to_form,
+        search: to_form(%{}),
         query: ""
       )
     }
@@ -40,20 +38,23 @@ defmodule LiveFormsWeb.UserList do
       |> Map.put(:action, :validate)
       |> to_form
 
-    socket = put_flash(socket, :info, "User removed")
-
-    {:noreply, assign(socket, users: Repo.all(User), form: form)}
+    {
+      :noreply,
+      assign(
+        put_flash(socket, :info, "User removed"),
+        users: Repo.all(User),
+        form: form
+      )
+    }
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
     case %User{} |> User.changeset(user_params) |> Repo.insert() do
       {:ok, _} ->
-        socket = put_flash(socket, :info, "User created")
-
         {
           :noreply,
           assign(
-            socket,
+            put_flash(socket, :info, "User created"),
             users: Repo.all(User),
             form: user_params |> validate
           )
@@ -65,27 +66,24 @@ defmodule LiveFormsWeb.UserList do
   end
 
   def handle_event("order", %{"by" => field}, socket) do
-    field_atom = field |> String.to_existing_atom()
+    field_as_atom = String.to_existing_atom(field)
 
     new_sort_dir =
-      if socket.assigns.sorted_by == field_atom do
+      if socket.assigns.sorted_by == field_as_atom do
         flip_sorting(socket.assigns.sort_dir)
       else
         socket.assigns.sort_dir
       end
 
-    socket = assign(socket, sort_dir: new_sort_dir, sorted_by: field_atom)
+    socket = assign(socket, sort_dir: new_sort_dir, sorted_by: field_as_atom)
 
     {:noreply, assign(socket, users: get_users(socket))}
   end
 
   def handle_event("search", %{"query" => query}, socket) do
-    socket =
-      socket
-      |> assign(query: query)
-      |> assign(users: socket |> get_users) # This needs to done after the query assign
+    socket = assign(socket, query: query)
 
-    {:noreply, socket}
+    {:noreply, assign(socket, users: get_users(socket))}
   end
 
   defp get_users(socket) do
