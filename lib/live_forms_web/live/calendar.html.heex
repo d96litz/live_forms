@@ -1,23 +1,23 @@
 <div class="flex gap-1">
   <.button phx-click="prev"><.icon name="hero-arrow-left" /></.button>
-  <div class="grid grid-cols-7 border">
+  <div class="grid grid-cols-7">
     <%= for weekday <- ~w(Monday Tuesday Wednesday Thursday Friday Saturday Sunday) do %>
-      <div class="border aspect-square flex justify-center items-center font-bold">
+      <div class="border rounded-lgd aspect-square flex justify-center items-center font-bold">
         <%= weekday %>
       </div>
     <% end %>
     <%= for _ <- start_padding(@date) do %>
-      <div class="border aspect-square flex justify-center items-center"></div>
+      <div class="border rounded-lgd aspect-square flex justify-center items-center"></div>
     <% end %>
 
     <%= for day <- @date |> Date.beginning_of_month() |> Date.range(Date.end_of_month(@date)) do %>
-      <div class={"border aspect-square flex justify-center items-center cursor-pointer #{Enum.member?(@selected_days, day) && "bg-blue-500"}"} phx-click={if Enum.member?(@selected_days, day), do: "unselect", else: "select"} phx-value-date={day}>
-        <%= day %>
+      <div class={"border rounded-lg hover:scale-110 active:bg-blue-500 active:scale-95 hover:bg-blue-500 border-collapse aspect-square flex justify-center items-center cursor-pointer #{Enum.member?(@selected_days, day) && "bg-blue-500"}"} phx-click={if Enum.member?(@selected_days, day), do: "unselect", else: "select"} phx-value-date={day}>
+        <%= Calendar.strftime(day, "%d") %>
       </div>
     <% end %>
 
     <%= for _ <- end_padding(@date) do %>
-      <div class="border aspect-square flex justify-center items-center"></div>
+      <div class="border rounded-lg aspect-square flex justify-center items-center"></div>
     <% end %>
   </div>
 
