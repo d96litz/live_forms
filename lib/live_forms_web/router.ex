@@ -19,6 +19,7 @@ defmodule LiveFormsWeb.Router do
 
     get "/", PageController, :home
     live "/user_list", UserList
+    live "/calendar", Calendar
   end
 
   # Other scopes may use custom stacks.

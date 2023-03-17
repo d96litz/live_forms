@@ -11,18 +11,23 @@
   </.simple_form>
 
   <.simple_form for={@search} phx-change="search">
-    <.input field={@search[:query]} label="Search" aria-autocomplete="none"/>
+    <.input field={@search[:query]} label="Search" aria-autocomplete="none" />
   </.simple_form>
   <table class="border">
     <tr>
       <%= for col <- [:name, :email, :bio] do %>
         <th
-          class={"border p-2 cursor-pointer hover:bg-gray-400 transition-all #{@sorted_by == col && "bg-blue-500"}"}
-          phx-click={JS.push("order", value: %{by: col})}
+          class={"border p-2 cursor-pointer hover:bg-gray-400 transition-all #{@sorted_by == col && "bg-black text-white"}"}
+          phx-click="order"
+          phx-value-by={col}
         >
           <%= col %>
           <%= if @sorted_by == col do %>
-            <%= (@sort_dir == :asc && "↑") || "↓" %>
+            <%= if @sort_dir == :asc do %>
+              <.icon name="hero-arrow-up" />
+            <% else %>
+              <.icon name="hero-arrow-down" />
+            <% end %>
           <% end %>
         </th>
       <% end %>
@@ -30,12 +35,21 @@
     </tr>
     <tbody id="users">
       <%= for user <- @users do %>
-        <tr id={"user_#{user.id}"}>
+        <tr
+          id={"user_#{user.id}"}
+          class="odd:bg-gray-200 hover:bg-gray-300"
+        >
           <td class="border p-2"><%= user.name %></td>
           <td class="border p-2"><%= user.email %></td>
           <td class="border p-2"><%= user.bio %></td>
           <td class="border p-2">
-            <.button phx-click="remove" phx-value-id={user.id}>Remove</.button>
+            <.button
+              phx-click="remove"
+              phx-value-id={user.id}
+
+            >
+              Remove
+            </.button>
           </td>
         </tr>
       <% end %>

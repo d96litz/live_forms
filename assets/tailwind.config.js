@@ -15,7 +15,18 @@ module.exports = {
     extend: {
       colors: {
         brand: "#FD4F00",
-      }
+      },
+      animation: {
+        fade: 'fadeIn 5s ease-in-out',
+      },
+
+      // that is actual animation
+      keyframes: theme => ({
+        fadeIn: {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
+        },
+      }),
     },
   },
   plugins: [

@@ -6,7 +6,6 @@ defmodule LiveFormsWeb.UserList do
   @spec mount(any, map, map) :: {:ok, map}
   def mount(_params, %{}, socket) do
     users = Repo.all(User)
-
     form = to_form(User.changeset(%User{}, %{}))
 
     {
