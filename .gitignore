@@ -37,3 +37,5 @@ npm-debug.log
 
 # Local database
 /db/
+
+node_modules/

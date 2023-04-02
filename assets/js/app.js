@@ -18,15 +18,55 @@
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
-import {Socket} from "phoenix"
-import {LiveSocket} from "phoenix_live_view"
+import { Socket } from "phoenix"
+import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}})
+
+let Hooks = {};
+
+Hooks.CalendarDay = {
+    mounted() {
+        this.el.addEventListener("dragstart", (e) => {
+            e.dataTransfer.effectAllowed = "move";
+            this.pushEvent("select_first_date", { first_date: e.target.id });
+            e.dataTransfer.setDragImage(new Image(), 0, 0);
+        });
+
+        this.el.addEventListener("dragenter", (e) => {
+            this.pushEvent("select_second_date", { second_date: e.target.id });
+        });
+
+        this.el.addEventListener("drop", (e) => {
+            this.pushEvent("date_set");
+        });
+    }
+}
+
+Hooks.CalendarNext = {
+    mounted() {
+        this.el.addEventListener("dragenter", (e) => {
+            this.pushEvent("next");
+        });
+    }
+}
+
+Hooks.CalendarPrev = {
+    mounted() {
+        this.el.addEventListener("dragenter", (e) => {
+            this.pushEvent("prev");
+        });
+    }
+}
+
+let liveSocket = new LiveSocket("/live", Socket, {
+    params: { _csrf_token: csrfToken },
+    hooks: Hooks
+})
 
 // Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 

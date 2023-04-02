@@ -13,46 +13,41 @@
   <.simple_form for={@search} phx-change="search">
     <.input field={@search[:query]} label="Search" aria-autocomplete="none" />
   </.simple_form>
-  <table class="border">
-    <tr>
-      <%= for col <- [:name, :email, :bio] do %>
-        <th
-          class={"border p-2 cursor-pointer hover:bg-gray-400 transition-all #{@sorted_by == col && "bg-black text-white"}"}
-          phx-click="order"
-          phx-value-by={col}
-        >
-          <%= col %>
-          <%= if @sorted_by == col do %>
-            <%= if @sort_dir == :asc do %>
-              <.icon name="hero-arrow-up" />
-            <% else %>
-              <.icon name="hero-arrow-down" />
+  <div class="w-full rounded-lg relative shadow-md overflow-x-auto">
+    <table class="w-full">
+      <tr>
+        <%= for col <- [:name, :email, :bio] do %>
+          <th
+            class={"p-2 cursor-pointer hover:bg-gray-400 first:rounded-tl-lg last:rouded-tr-lg+ transition-all #{@sorted_by == col && "bg-black text-white"}"}
+            phx-click="order"
+            phx-value-by={col}
+          >
+            <%= col %>
+            <%= if @sorted_by == col do %>
+              <%= if @sort_dir == :asc do %>
+                <.icon name="hero-arrow-up" />
+              <% else %>
+                <.icon name="hero-arrow-down" />
+              <% end %>
             <% end %>
-          <% end %>
-        </th>
-      <% end %>
-      <th></th>
-    </tr>
-    <tbody id="users">
-      <%= for user <- @users do %>
-        <tr
-          id={"user_#{user.id}"}
-          class="odd:bg-gray-200 hover:bg-gray-300"
-        >
-          <td class="border p-2"><%= user.name %></td>
-          <td class="border p-2"><%= user.email %></td>
-          <td class="border p-2"><%= user.bio %></td>
-          <td class="border p-2">
-            <.button
-              phx-click="remove"
-              phx-value-id={user.id}
-
-            >
-              Remove
-            </.button>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+          </th>
+        <% end %>
+        <th></th>
+      </tr>
+      <tbody id="users">
+        <%= for user <- @users do %>
+          <tr id={"user_#{user.id}"} class="odd:bg-gray-200 hover:bg-gray-300">
+            <td class="border p-2"><%= user.name %></td>
+            <td class="border p-2"><%= user.email %></td>
+            <td class="border p-2"><%= user.bio %></td>
+            <td class="border p-2">
+              <.button phx-click="remove" phx-value-id={user.id}>
+                Remove
+              </.button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>

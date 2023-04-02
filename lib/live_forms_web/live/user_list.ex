@@ -1,12 +1,12 @@
 defmodule LiveFormsWeb.UserList do
   use LiveFormsWeb, :live_view
-  alias LiveForms.{Repo, User}
+  alias LiveForms.{Repo, Accounts.User}
   import Ecto.Query
 
   @spec mount(any, map, map) :: {:ok, map}
   def mount(_params, %{}, socket) do
     users = Repo.all(User)
-    form = to_form(User.changeset(%User{}, %{}))
+    form = to_form(User.default_changeset(%User{}, %{}))
 
     {
       :ok,
@@ -17,7 +17,8 @@ defmodule LiveFormsWeb.UserList do
         sorted_by: :name,
         sort_dir: :asc,
         search: to_form(%{}),
-        query: ""
+        query: "",
+        page_title: "Users"
       )
     }
   end
@@ -33,7 +34,7 @@ defmodule LiveFormsWeb.UserList do
 
     form =
       %User{}
-      |> User.changeset(socket.assigns.form.source.changes)
+      |> User.default_changeset(socket.assigns.form.source.changes)
       |> Map.put(:action, :validate)
       |> to_form
 
@@ -48,7 +49,7 @@ defmodule LiveFormsWeb.UserList do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case %User{} |> User.changeset(user_params) |> Repo.insert() do
+    case %User{} |> User.default_changeset(user_params) |> Repo.insert() do
       {:ok, _} ->
         {
           :noreply,
@@ -97,7 +98,7 @@ defmodule LiveFormsWeb.UserList do
   end
 
   defp validate(params) do
-    User.changeset(%User{}, params)
+    User.default_changeset(%User{}, params)
     |> Map.put(:action, :validate)
     |> to_form
   end
