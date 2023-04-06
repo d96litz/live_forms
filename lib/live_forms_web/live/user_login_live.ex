@@ -8,7 +8,7 @@ defmodule LiveFormsWeb.UserLoginLive do
         Sign in to account
         <:subtitle>
           Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/users/register"} class="font-semibold text-primary hover:underline">
             Sign up
           </.link>
           for an account now.
@@ -27,7 +27,7 @@ defmodule LiveFormsWeb.UserLoginLive do
         </:actions>
         <:actions>
           <.button phx-disable-with="Signing in..." class="w-full">
-            Sign in <span aria-hidden="true">→</span>
+            Sign in
           </.button>
         </:actions>
       </.simple_form>

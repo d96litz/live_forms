@@ -18,7 +18,8 @@ defmodule LiveFormsWeb.UserList do
         sort_dir: :asc,
         search: to_form(%{}),
         query: "",
-        page_title: "Users"
+        page_title: "Users",
+        theme: "synthwave"
       )
     }
   end

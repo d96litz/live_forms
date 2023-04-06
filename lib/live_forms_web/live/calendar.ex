@@ -1,9 +1,15 @@
 defmodule LiveFormsWeb.Calendar do
   use LiveFormsWeb, :live_view
   alias LiveForms.{Repo, Event}
-  import Ecto.Query
+  import Ecto.Query, only: [from: 2]
+
+  @topic "events"
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      LiveFormsWeb.Endpoint.subscribe(@topic)
+    end
+
     {
       :ok,
       assign(
@@ -13,7 +19,8 @@ defmodule LiveFormsWeb.Calendar do
         first_date: nil,
         second_date: nil,
         event: nil,
-        events: events_for_month(Date.utc_today())
+        events: events_for_month(Date.utc_today()),
+        theme: "synthwave"
       )
     }
   end
@@ -36,7 +43,6 @@ defmodule LiveFormsWeb.Calendar do
   end
 
   def handle_event("select_second_date", %{"second_date" => second_date}, socket) do
-    IO.inspect(second_date)
     second_date_as_date = Date.from_iso8601!(second_date)
     socket = assign(socket, :second_date, second_date_as_date)
     handle_event("date_set", %{}, socket)
@@ -91,7 +97,9 @@ defmodule LiveFormsWeb.Calendar do
   def handle_event("save_event", %{"event" => event_params}, socket) do
     case %Event{} |> Event.changeset(event_params) |> Repo.insert() do
       {:ok, new_event} ->
-        {:noreply, assign(socket, event: nil, events: [new_event | socket.assigns.events])}
+        # LifeFormsWeb.Endpoint.broadcast_from(self(), "events", "new_event", new_event)
+        send(self(), {:event_crated, new_event})
+        {:noreply, socket}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :event, changeset |> to_form)}
@@ -102,6 +110,71 @@ defmodule LiveFormsWeb.Calendar do
     event = Repo.get!(Event, event_id)
     Repo.delete!(event)
     {:noreply, assign(socket, event: nil, events: socket.assigns.events -- [event])}
+  end
+
+  def handle_event("keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, first_date: nil, second_date: nil, event: nil)}
+  end
+
+  def handle_event(
+        "keyup",
+        %{"key" => "ArrowRight"},
+        %{assigns: %{control_pressed: true}} = socket
+      ) do
+    handle_event("next", %{}, socket)
+  end
+
+  def handle_event(
+        "keyup",
+        %{"key" => "ArrowLeft"},
+        %{assigns: %{control_pressed: true}} = socket
+      ) do
+    handle_event("prev", %{}, socket)
+  end
+
+  def handle_event(
+        "keydown",
+        %{"key" => pressed_key},
+        %{assigns: %{second_date: second_date}} = socket
+      )
+      when pressed_key in ["ArrowLeft", "ArrowRight"] do
+    [increment, progress] = if pressed_key == "ArrowLeft", do: [-1, "prev"], else: [1, "next"]
+
+    if second_date do
+      socket = update(socket, :second_date, &Date.add(&1, increment))
+
+      socket =
+        if socket.assigns.second_date.month == second_date.month + increment do
+          handle_event(progress, %{}, socket)
+          |> elem(1)
+        else
+          socket
+        end
+
+      handle_event("date_set", %{}, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("keydown", %{"key" => "Control"}, socket) do
+    {:noreply, assign(socket, :control_pressed, true)}
+  end
+
+  def handle_event("keyup", %{"key" => "Control"}, socket) do
+    {:noreply, assign(socket, :control_pressed, false)}
+  end
+
+  def handle_event("keydown", _, socket), do: {:noreply, socket}
+  def handle_event("keyup", _, socket), do: {:noreply, socket}
+
+  def handle_event("change_theme", %{"theme" => theme}, socket) do
+    {:noreply, assign(socket, theme: theme)}
+  end
+
+  def handle_info({:event_crated, new_event}, socket) do
+    {:noreply, update(socket, :events, &(&1 ++ [new_event]))}
+    # {:noreply, assign(socket, :events, Repo.all(Event))}
   end
 
   defp cell_color(date, first_selected, second_selected, events) do
@@ -115,7 +188,7 @@ defmodule LiveFormsWeb.Calendar do
         {true, true} -> "bg-orange-500"
         {true, false} -> "bg-red-500"
         {false, true} -> "bg-yellow-500"
-        {false, false} -> "bg-white"
+        {false, false} -> "bg-base-100"
       end
     end
   end
@@ -132,9 +205,10 @@ defmodule LiveFormsWeb.Calendar do
     end_of_month = date |> Date.end_of_month()
 
     Repo.all(
-      from e in Event,
+      from(e in Event,
         where: e.start_date <= ^end_of_month and e.end_date >= ^beginning_of_month,
         order_by: [asc: e.id]
+      )
     )
   end
 

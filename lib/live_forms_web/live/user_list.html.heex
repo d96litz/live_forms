@@ -36,7 +36,7 @@
       </tr>
       <tbody id="users">
         <%= for user <- @users do %>
-          <tr id={"user_#{user.id}"} class="odd:bg-gray-200 hover:bg-gray-300">
+          <tr id={"user_#{user.id}"}>
             <td class="border p-2"><%= user.name %></td>
             <td class="border p-2"><%= user.email %></td>
             <td class="border p-2"><%= user.bio %></td>

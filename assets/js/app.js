@@ -62,7 +62,16 @@ Hooks.CalendarPrev = {
 
 let liveSocket = new LiveSocket("/live", Socket, {
     params: { _csrf_token: csrfToken },
-    hooks: Hooks
+    hooks: Hooks,
+    metadata: {
+        keydown: (e, el) => {
+            return {
+                key: e.key,
+                metaKey: e.metaKey,
+                repeat: e.repeat,
+            }
+        }
+    }
 })
 
 // Show progress bar on live navigation and form submits

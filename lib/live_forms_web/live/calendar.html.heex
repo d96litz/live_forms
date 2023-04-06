@@ -1,24 +1,29 @@
-<div class="flex flex-col align-middle items-center justify-around gap-3">
-  <span class="text-lg font-bold"><%= Calendar.strftime(@date, "%B") %></span>
-  <div class="flex justify-between">
-    <.button phx-click="prev" phx-hook="CalendarPrev" class="shadow-lg hover:scale-105" id="prev">
+<div
+  class="flex flex-col align-middle items-center justify-around gap-5"
+  phx-window-keyup="keyup"
+  phx-window-keydown="keydown"
+  phx-window-keypress="keypress"
+>
+  <h1 class="text-lg font-bold"><%= Calendar.strftime(@date, "%B") %></h1>
+  <div class="flex justify-between items-center w-full transition-all">
+    <.button phx-click="prev" phx-hook="CalendarPrev" class="shadow-lg" id="prev">
       <.icon name="hero-arrow-left" />
     </.button>
-    <div class="grid grid-cols-7 transition-all mx-5">
+    <div class="flex-1 grid grid-cols-7 transition-all mx-5 rounded-xl overflow-hidden outline">
       <%= for weekday <- ~w(Mon Tue Wed Thu Fri Sat Sun) do %>
-        <div class="bg-white outline aspect-square flex justify-center items-center font-bold h-28 relative">
+        <div class="bg-base-100 outline flex justify-center items-center font-bold min-h-8 relative">
           <%= weekday %>
         </div>
       <% end %>
       <%= for _ <- start_padding(@date) do %>
-        <div class="bg-white outline aspect-square flex justify-center items-center h-28 relative">
+        <div class="bg-base-100 outline aspect-square flex justify-center items-center min-h-8 relative">
         </div>
       <% end %>
 
       <%= for day <- @date |> Date.beginning_of_month() |> Date.range(Date.end_of_month(@date)) do %>
         <div
           draggable="true"
-          class={"bg-white #{cell_color(day, @first_date, @second_date, @events)} duration-150 transition-all outline select-none calendar-day aspect-square flex cursor-pointer h-28 relative p-2"}
+          class={"#{cell_color(day, @first_date, @second_date, @events)} outline select-none calendar-day aspect-square flex cursor-pointer min-h-8 relative p-2"}
           phx-hook="CalendarDay"
           phx-click="select_day"
           phx-value-day={day}
@@ -26,15 +31,9 @@
         >
           <div class="absolute flex flex-col-reverse gap-1 overflow-hidden pointer-events-none bottom-2 whitespace-nowrap left-0 right-0">
             <%= for event <- events_for_date(day, @events) do %>
-              <span
-                class="
-              bg-gray-200 text-xs max-w-full overflow-hidden
-              text-gray-700 rounded-full px-2 py-1 mx-2
-              leading-none items-center text-ellipsis
-              animate-in hidden"
-                phx-mounted={JS.show(transition: "fade-in zoom-in")}
-                phx-remove={JS.hide(transition: "fade-out zoom-out")}
-              >
+              <span class="badge text-xs max-w-full overflow-hidden
+              px-2 py-1 mx-2
+              leading-none items-center text-ellipsis">
                 <%= event.title %>
               </span>
             <% end %>
@@ -44,42 +43,55 @@
       <% end %>
 
       <%= for _ <- end_padding(@date) do %>
-        <div class="bg-white outline aspect-square flex justify-center items-center h-28 relative">
+        <div class="bg-base-100 outline aspect-square flex justify-center items-center min-h-8 relative">
         </div>
       <% end %>
     </div>
-
-    <.button phx-click="next" class="shadow-lg hover:scale-105" phx-hook="CalendarNext" id="next">
+    <.button phx-click="next" class="shadow-lg" phx-hook="CalendarNext" id="next">
       <.icon name="hero-arrow-right" />
     </.button>
   </div>
 
-  <table class="border">
-    <th class="p-2">Title</th>
-    <th class="p-2">Start Date</th>
-    <th class="p-2">End Date</th>
-    <th class="p-2"></th>
-    <%= for event <- @events do %>
-      <tr class="even:bg-gray-200 border">
-        <td class="p-2"><%= event.title %></td>
-        <td class="p-2"><%= event.start_date |> Calendar.strftime("%B %d, %Y") %></td>
-        <td class="p-2"><%= event.end_date |> Calendar.strftime("%B %d, %Y") %></td>
-        <td class="p-2">
-          <.button phx-click="delete_event" phx-value-id={event.id}>Delete</.button>
-        </td>
-      </tr>
-    <% end %>
-  </table>
+  <div class="w-full outline rounded-lg">
+    <table class="table w-full table-zebra">
+      <th class="p-2">Title</th>
+      <th class="p-2">Start Date</th>
+      <th class="p-2">End Date</th>
+      <th class="p-2"></th>
+      <%= for event <- @events do %>
+        <tr
+          phx-remove={JS.transition("duration-200 animate-out fade-out zoom-out")}
+          phx-mounted={JS.transition("duration-200 animate-in fade-in zoom-in")}
+        >
+          <td class="p-2"><%= event.title %></td>
+          <td class="p-2"><%= event.start_date |> Calendar.strftime("%B %d, %Y") %></td>
+          <td class="p-2"><%= event.end_date |> Calendar.strftime("%B %d, %Y") %></td>
+          <td class="p-2">
+            <.button phx-click="delete_event" phx-value-id={event.id}>Delete</.button>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  </div>
 
   <%= if @event do %>
-    <.simple_form for={@event} phx-change="change" phx-submit="save_event" class="min-w-full">
+    <.simple_form
+      for={@event}
+      phx-change="change"
+      phx-submit="save_event"
+      class="min-w-full transition-all duration-200"
+      phx-remove={JS.hide(transition: "opacity-0")}
+      phx-mounted={JS.show(transition: "opacity-100")}
+    >
       <.input label="Title" field={@event[:title]} />
       <%= if @first_date == @second_date do %>
         <.input label="Date" field={@event[:start_date]} type="date" />
+        <.input field={@event[:end_date]} type="hidden" />
       <% else %>
         <.input label="Start Date" field={@event[:start_date]} type="date" />
         <.input label="End Date" field={@event[:end_date]} type="date" />
       <% end %>
+      <.input label="Whole Day" field={@event[:whole_day]} type="checkbox" />
       <.button>Submit</.button>
     </.simple_form>
   <% end %>
